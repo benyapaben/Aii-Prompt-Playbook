@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aii Prompt Playbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Archivo:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#E4003A;
+    --red-dark:#B80030;
+    --red-soft:#FFF0F4;
+    --red-line:#FFD6E0;
+    --ink:#1C1C22;
+    --ink-soft:#6B6B76;
+    --paper:#FFFFFF;
+    --paper-warm:#FAFAFB;
+    --line:#ECECF0;
+    --ok:#0E8A4A;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'IBM Plex Sans Thai',system-ui,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.6;
+  }
+  /* ---------- Header ---------- */
+  header{
+    background:linear-gradient(135deg,var(--red) 0%,var(--red-dark) 100%);
+    color:#fff;
+    padding:48px 24px 56px;
+    position:relative;
+    overflow:hidden;
+  }
+  header::after{
+    content:"";
+    position:absolute;right:-80px;top:-80px;
+    width:320px;height:320px;border-radius:50%;
+    background:rgba(255,255,255,.08);
+  }
+  header::before{
+    content:"";
+    position:absolute;right:60px;bottom:-120px;
+    width:240px;height:240px;border-radius:50%;
+    background:rgba(255,255,255,.06);
+  }
+  .header-inner{max-width:920px;margin:0 auto;position:relative;z-index:1}
+  .eyebrow{
+    font-family:'Archivo',sans-serif;
+    font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    opacity:.85;margin-bottom:10px;font-weight:700;
+  }
+  h1{
+    font-family:'Archivo','IBM Plex Sans Thai',sans-serif;
+    font-size:clamp(28px,5vw,44px);
+    font-weight:800;letter-spacing:-.01em;line-height:1.15;
+  }
+  .subtitle{margin-top:12px;font-size:15px;opacity:.92;max-width:560px}
+  /* ---------- Sticky nav ---------- */
+  nav{
+    position:sticky;top:0;z-index:50;
+    background:rgba(255,255,255,.96);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    padding:12px 24px;
+  }
+  .nav-inner{max-width:920px;margin:0 auto;display:flex;gap:8px;flex-wrap:wrap}
+  .chip{
+    font-size:13px;font-weight:600;
+    padding:6px 14px;border-radius:999px;
+    border:1px solid var(--red-line);
+    color:var(--red);background:#fff;
+    text-decoration:none;transition:all .15s;
+    white-space:nowrap;
+  }
+  .chip:hover{background:var(--red-soft)}
+  .chip.priority{background:var(--red);color:#fff;border-color:var(--red)}
+  .chip.priority:hover{background:var(--red-dark)}
+  /* ---------- Search ---------- */
+  .search-wrap{max-width:920px;margin:28px auto 0;padding:0 24px}
+  .search{
+    width:100%;padding:13px 18px;
+    font-family:inherit;font-size:15px;
+    border:1.5px solid var(--line);border-radius:12px;
+    outline:none;transition:border-color .15s;
+    background:var(--paper-warm);
+  }
+  .search:focus{border-color:var(--red);background:#fff}
+  /* ---------- Sections ---------- */
+  main{max-width:920px;margin:0 auto;padding:8px 24px 80px}
+  section{margin-top:44px;scroll-margin-top:76px}
+  .section-head{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
+  .section-head h2{
+    font-family:'Archivo','IBM Plex Sans Thai',sans-serif;
+    font-size:22px;font-weight:800;color:var(--ink);
+  }
+  .section-head .count{
+    font-size:12px;font-weight:700;color:var(--red);
+    background:var(--red-soft);border:1px solid var(--red-line);
+    padding:2px 10px;border-radius:999px;
+  }
+  .section-head .th-label{font-size:13px;color:var(--ink-soft)}
+  /* ---------- Prompt cards ---------- */
+  .card{
+    display:flex;align-items:center;gap:14px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-left:4px solid var(--red);
+    border-radius:12px;
+    padding:16px 18px;
+    margin-bottom:10px;
+    transition:box-shadow .15s,transform .15s;
+  }
+  .card:hover{box-shadow:0 4px 18px rgba(228,0,58,.09);transform:translateY(-1px)}
+  .prompt-text{
+    flex:1;font-size:15px;font-weight:500;color:var(--ink);
+    user-select:all;cursor:text;
+  }
+  .copy-btn{
+    flex-shrink:0;
+    font-family:inherit;font-size:13px;font-weight:600;
+    color:var(--red);background:var(--red-soft);
+    border:1px solid var(--red-line);border-radius:9px;
+    padding:8px 15px;cursor:pointer;
+    display:flex;align-items:center;gap:6px;
+    transition:all .15s;
+  }
+  .copy-btn:hover{background:var(--red);color:#fff;border-color:var(--red)}
+  .copy-btn.copied{background:var(--ok);border-color:var(--ok);color:#fff}
+  .copy-btn svg{width:14px;height:14px}
+  /* ---------- Tips ---------- */
+  .tip{
+    background:var(--red-soft);border:1px solid var(--red-line);
+    border-radius:12px;padding:16px 18px;margin-top:24px;
+    font-size:14px;color:var(--ink);
+  }
+  .tip strong{color:var(--red)}
+  footer{
+    text-align:center;padding:28px 24px 44px;
+    font-size:13px;color:var(--ink-soft);
+    border-top:1px solid var(--line);
+  }
+  .hidden{display:none!important}
+  .no-results{
+    text-align:center;padding:48px 0;color:var(--ink-soft);
+    font-size:15px;display:none;
+  }
+  @media (max-width:560px){
+    .card{flex-direction:column;align-items:stretch}
+    .copy-btn{justify-content:center}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="eyebrow">Aii Chatbot &middot; BIC AI Taskforce</div>
+    <h1>Prompt Playbook</h1>
+    <p class="subtitle">รวมคำถามแนะนำสำหรับใช้งาน Aii Chatbot — กดปุ่ม "คัดลอก" แล้วนำไปวางใน Aii ได้ทันที</p>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-inner" id="navChips"></div>
+</nav>
+
+<div class="search-wrap">
+  <input class="search" id="searchBox" type="text" placeholder="ค้นหา prompt เช่น Gross Add, Churn, พื้นที่ ...">
+</div>
+
+<main id="content"></main>
+<div class="no-results" id="noResults">ไม่พบ prompt ที่ตรงกับคำค้นหา</div>
+
+<footer>Business Intelligence Center &middot; True Corporation &middot; อัปเดตกรกฎาคม 2026</footer>
+
+<script>
+const SECTIONS = [
+  {
+    id:"ga", en:"GA", th:"Gross Add — ยอดรับสมาชิกใหม่", priority:true,
+    prompts:[
+      "แสดง TOL Gross Add ปี 2026 แยกตามพื้นที่",
+      "แสดง TOL Gross Add แยกตาม Connected Geo และ Channel แยกตามพื้นที่",
+      "แสดง GA ของ Prepaid ย้อนหลัง 3 เดือน",
+      "แสดง PBH Ranking by GA แยกตาม ปีล่าสุด"
+    ]
+  },
+  {
+    id:"ga-inflow", en:"GA & Inflow M1", th:"ดู GA คู่กับ Inflow M1", priority:true,
+    prompts:[
+      "แสดง GA และ Inflow M1 ของ Prepaid ปี 2026 แยกตามพื้นที่",
+      "แสดง GA และ Inflow M1 ของ Postpaid ปี 2026 แยกตามพื้นที่",
+      "แสดง GA และ Inflow M1 ของ TOL ปี 2026 แยกตามพื้นที่"
+    ]
+  },
+  {
+    id:"inflow", en:"Inflow M1", th:"คุณภาพสมาชิกใหม่เดือนแรก", priority:true,
+    prompts:[
+      "แสดง Inflow M1 ของ Prepaid ล่าสุด แยกตามพื้นที่",
+      "แสดง Inflow M1 ของ Postpaid ล่าสุด แยกตามพื้นที่",
+      "แสดง Inflow M1 ของ TOL ล่าสุด แยกตามพื้นที่"
+    ]
+  },
+  {
+    id:"netadd", en:"Net Add", th:"ยอดสมาชิกสุทธิ", priority:true,
+    prompts:[
+      "แสดง Net Add แยกตาม ปี 2026 แยกPBH ด้วยได้ไหม",
+      "แสดง Net Add ล่าสุด",
+      "แสดง TOL Net Add Trend เดือนนี้ แยกตาม PBH"
+    ]
+  },
+  {
+    id:"churn", en:"Churn", th:"การสูญเสียสมาชิก", priority:true,
+    prompts:[
+      "แสดง TOL Churn Subs ปี 2026 ตาม Voluntary Churn และ Involuntary Churn แยกตามพื้นที่/PBH",
+      "แสดง Postpaid Churn Subs และ %MoM ของ True และ Dtac ปี 2026 แยกตามพื้นที่",
+      "แสดง TOL Churn Rate ย้อนหลัง 3 เดือน แยก"
+    ]
+  },
+  {
+    id:"kpi", en:"KPI Performance", th:"ผลงานเทียบเป้าหมาย",
+    prompts:[
+      "แสดง KPI Performance และ YTD Achievement ย้อนหลัง 3 เดือน แยกตามพื้นที่/PBH",
+      "แสดง Prepaid Performance แยกตาม ปี ล่าสุด เเละ %Achievement",
+      "แสดง TOL Performance Actual แยกตาม ปี ล่าสุด"
+    ]
+  },
+  {
+    id:"mobile-mks", en:"Mobile Market Share", th:"ส่วนแบ่งตลาดมือถือ",
+    prompts:[
+      "แสดง Mobile Subs Share ปี 2026 แยกตามพื้นที่ เปรียบเทียบกับคู่แข่ง",
+      "แสดง Mobile Market Share ของ True, Dtac และ AIS"
+    ]
+  },
+  {
+    id:"tol-mks", en:"TOL Market Share", th:"ส่วนแบ่งตลาดออนไลน์บ้าน",
+    prompts:[
+      "แสดง TOL Market Share แยกตาม Subscriber และ %MKS แยกตามพื้นที่"
+    ]
+  },
+  {
+    id:"arpu", en:"ARPU", th:"รายได้เฉลี่ยต่อเลขหมาย",
+    prompts:[
+      "ขอ TOL ARPU ของ 3 เดือนที่ผ่านมา",
+      "แสดง Prepaid ARPU ย้อนหลัง 3 เดือน"
+    ]
+  },
+  {
+    id:"revenue", en:"Service Revenue", th:"รายได้จากบริการ",
+    prompts:[
+      "แสดง Service Revenue by Product และ YTD ปี 2026 แยกตามจังหวัด/ภูมิภาค/ช่องทาง",
+      "แสดง Service Revenue ล่าสุด ของ Geo Channel"
+    ]
+  },
+  {
+    id:"caller", en:"Active Caller", th:"ผู้ใช้งานที่มีการโทรจริง",
+    prompts:[
+      "แสดง Active Caller ล่าสุด แยกตามพื้นที่",
+      "แสดง Active Caller และ YoY แยกตาม ปี 2026"
+    ]
+  },
+  {
+    id:"ap1d", en:"AP1D", th:"Active Prepaid 1 Day",
+    prompts:[
+      "แสดง AP1D ของ Prepaid ปี 2026 แยกตามพื้นที่"
+    ]
+  },
+  {
+    id:"network", en:"Network Quality", th:"คุณภาพเครือข่าย",
+    prompts:[
+      "แสดงข้อมูล Blackcell 4G และ Blackcell 5G ปี 2026 แยกตามพื้นที่ เปรียบเทียบกับเดือนก่อนด้วย"
+    ]
+  },
+  {
+    id:"salein", en:"Sale-In", th:"ยอดขายเข้าช่องทาง",
+    prompts:[
+      "แสดง TOL Sale-In และ MTD ล่าสุด"
+    ]
+  }
+];
+
+const copyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const checkIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+const nav = document.getElementById('navChips');
+const main = document.getElementById('content');
+
+SECTIONS.forEach(sec=>{
+  const chip = document.createElement('a');
+  chip.href = '#'+sec.id;
+  chip.className = 'chip'+(sec.priority?' priority':'');
+  chip.textContent = sec.en;
+  nav.appendChild(chip);
+
+  const section = document.createElement('section');
+  section.id = sec.id;
+  section.innerHTML = `
+    <div class="section-head">
+      <h2>${sec.en}</h2>
+      <span class="th-label">${sec.th}</span>
+      <span class="count">${sec.prompts.length} prompt${sec.prompts.length>1?'s':''}</span>
+    </div>`;
+  sec.prompts.forEach(p=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<div class="prompt-text">${p}</div>`;
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.innerHTML = copyIcon + '<span>คัดลอก</span>';
+    btn.addEventListener('click', ()=>copyPrompt(btn, p));
+    card.appendChild(btn);
+    section.appendChild(card);
+  });
+  main.appendChild(section);
+});
+
+const tip = document.createElement('div');
+tip.className = 'tip';
+tip.innerHTML = '<strong>เคล็ดลับ:</strong> ปรับแต่ง prompt ได้ตามต้องการ เช่น เปลี่ยนปี ช่วงเวลา หรือระบุพื้นที่/PBH ที่สนใจ แล้ว Aii จะดึงข้อมูลตามเงื่อนไขใหม่ให้อัตโนมัติ';
+main.appendChild(tip);
+
+function copyPrompt(btn, text){
+  const done = ()=>{
+    btn.classList.add('copied');
+    btn.innerHTML = checkIcon + '<span>คัดลอกแล้ว</span>';
+    setTimeout(()=>{
+      btn.classList.remove('copied');
+      btn.innerHTML = copyIcon + '<span>คัดลอก</span>';
+    }, 1800);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text, done));
+  }else{
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, done){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try{ document.execCommand('copy'); done(); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+/* ---------- Search filter ---------- */
+const searchBox = document.getElementById('searchBox');
+const noResults = document.getElementById('noResults');
+searchBox.addEventListener('input', ()=>{
+  const q = searchBox.value.trim().toLowerCase();
+  let anyVisible = false;
+  document.querySelectorAll('main section').forEach(sec=>{
+    let secVisible = false;
+    sec.querySelectorAll('.card').forEach(card=>{
+      const match = card.querySelector('.prompt-text').textContent.toLowerCase().includes(q)
+        || sec.querySelector('h2').textContent.toLowerCase().includes(q);
+      card.classList.toggle('hidden', !match);
+      if(match) secVisible = true;
+    });
+    sec.classList.toggle('hidden', !secVisible);
+    if(secVisible) anyVisible = true;
+  });
+  noResults.style.display = anyVisible ? 'none' : 'block';
+  tip.classList.toggle('hidden', q.length>0);
+});
+</script>
+</body>
+</html>
