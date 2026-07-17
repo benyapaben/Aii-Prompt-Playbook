@@ -70,8 +70,6 @@
   .edit-bar{position:fixed;left:0;right:0;bottom:0;z-index:100;background:var(--ink);color:#fff;padding:12px 24px;display:none;align-items:center;gap:14px;justify-content:center;flex-wrap:wrap;box-shadow:0 -4px 20px rgba(0,0,0,.15)}
   body.edit-mode .edit-bar{display:flex}
   .edit-bar .hint{font-size:13px;opacity:.75;max-width:440px}
-  .edit-bar .connection-btn{font-family:inherit;font-size:13px;font-weight:700;color:#fff;background:transparent;border:1px solid rgba(255,255,255,.4);border-radius:10px;padding:9px 14px;cursor:pointer}
-  .edit-bar .connection-btn:hover{background:rgba(255,255,255,.12)}
   .bar-btn{font-family:inherit;font-size:14px;font-weight:700;border-radius:10px;padding:10px 20px;cursor:pointer;border:none;transition:all .15s}
   .bar-btn.primary{background:var(--red);color:#fff}
   .bar-btn.primary:hover{background:#FF1A55}
@@ -97,9 +95,6 @@
     border:1.5px solid var(--line);border-radius:10px;outline:none;margin-bottom:16px;
   }
   .modal input:focus{border-color:var(--red)}
-  .modal label{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin:10px 0 5px}
-  .modal label:first-of-type{margin-top:0}
-  .modal .setup-note{font-size:12px;color:var(--ink-soft);line-height:1.5;margin:-4px 0 12px}
   .modal-actions{display:flex;gap:10px;justify-content:flex-end}
   .modal-btn{
     font-family:inherit;font-size:14px;font-weight:700;border-radius:10px;
@@ -145,19 +140,14 @@
 <footer>Business Intelligence Center &middot; True Corporation</footer>
 
 <div class="edit-bar">
-  <span class="hint">แก้ไขเสร็จแล้วกด "บันทึก" — ระบบจะอัปเดตไฟล์ข้อมูลใน GitHub และเผยแพร่ผ่าน GitHub Pages</span>
-  <button class="connection-btn" id="githubSetupBtn">ตั้งค่า GitHub</button>
+  <span class="hint">แก้ไขเสร็จแล้วกด "บันทึก" — ข้อมูลจะอัปเดตให้ทุกคนเห็นทันที</span>
   <button class="bar-btn primary" id="saveBtn">&#10003; บันทึกให้ทุกคนเห็น</button>
   <button class="bar-btn ghost" id="exitEditBtn">ยกเลิก / ออกจากโหมดแก้ไข</button>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
-/* ===== Admin passcode: change this string to whatever you want ===== */
-var ADMIN_PASSCODE = 'BIC-Aii-2026';
-var GITHUB_SETTINGS_KEY = 'aii-playbook-github-settings-v1';
-var GITHUB_TOKEN_KEY = 'aii-playbook-github-token-v1';
-var DEFAULT_DATA_PATH = 'playbook-data.json';
+var PLAYBOOK_API = '/api/playbook';
 
 var DEFAULT_SECTIONS = [
  {"id":"ga","en":"GA","th":"Gross Add — ยอดรับสมาชิกใหม่","priority":true,"prompts":[
@@ -261,33 +251,16 @@ function askModal(opts){
   });
 }
 
-/* ============ Published data + GitHub Pages saving ============
-   GitHub Pages is static, so window.storage (used by the original Claude
-   artifact) does not exist there.  The published JSON file is the shared
-   source of truth; admins update that file through the GitHub Contents API. */
-function inferGithubSettings(){
-  var match = location.hostname.match(/^([^.]+)\.github\.io$/), parts = location.pathname.split('/').filter(Boolean);
-  if(!match) return {owner:'', repo:'', branch:'main', path:DEFAULT_DATA_PATH};
-  return {owner:match[1], repo:parts[0] || (match[1] + '.github.io'), branch:'main', path:DEFAULT_DATA_PATH};
-}
-function getGithubSettings(){
-  try{
-    var saved = JSON.parse(localStorage.getItem(GITHUB_SETTINGS_KEY) || '{}');
-    var inferred = inferGithubSettings();
-    return {owner:saved.owner || inferred.owner, repo:saved.repo || inferred.repo, branch:saved.branch || inferred.branch, path:saved.path || DEFAULT_DATA_PATH};
-  }catch(e){
-    return inferGithubSettings();
-  }
-}
-function getGithubToken(){ return sessionStorage.getItem(GITHUB_TOKEN_KEY) || ''; }
-function saveGithubSettings(settings, token){
-  localStorage.setItem(GITHUB_SETTINGS_KEY, JSON.stringify(settings));
-  if(token) sessionStorage.setItem(GITHUB_TOKEN_KEY, token);
-}
+/* ============ Cloudflare Access + D1 data ============ */
+var canEdit = false;
 function loadPublished(){
-  return fetch('./' + DEFAULT_DATA_PATH + '?v=' + Date.now(), {cache:'no-store'})
-    .then(function(res){ if(!res.ok) throw new Error('data file unavailable'); return res.json(); })
+  return fetch(PLAYBOOK_API, {cache:'no-store', credentials:'same-origin'})
+    .then(function(res){
+      if(!res.ok) return res.json().catch(function(){ return {}; }).then(function(body){ throw new Error(body.error || 'data unavailable'); });
+      return res.json();
+    })
     .then(function(obj){
+      canEdit = !!(obj && obj.canEdit);
       if(!obj || !Array.isArray(obj.sections) || !obj.sections.length) return false;
       SECTIONS = obj.sections;
       LAST_UPDATED = obj.updated || null;
@@ -295,71 +268,13 @@ function loadPublished(){
     })
     .catch(function(){ return false; });
 }
-function githubApiUrl(settings){
-  var path = settings.path.split('/').map(function(p){ return encodeURIComponent(p); }).join('/');
-  return 'https://api.github.com/repos/' + encodeURIComponent(settings.owner) + '/' + encodeURIComponent(settings.repo) + '/contents/' + path;
-}
-function githubHeaders(token){
-  return {
-    'Accept':'application/vnd.github+json',
-    'Authorization':'Bearer ' + token,
-    'X-GitHub-Api-Version':'2022-11-28',
-    'Content-Type':'application/json'
-  };
-}
-function encodeBase64Utf8(value){
-  var bytes = new TextEncoder().encode(value), binary = '', chunk = 0x8000;
-  for(var i=0; i<bytes.length; i+=chunk) binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
-  return btoa(binary);
-}
-function responseError(res){
-  return res.json().catch(function(){ return {}; }).then(function(body){
-    throw new Error(body.message || ('GitHub error ' + res.status));
-  });
-}
 function savePublished(){
-  var settings = getGithubSettings(), token = getGithubToken();
-  if(!settings.owner || !settings.repo || !token) return Promise.reject(new Error('missing-github-setup'));
-  var url = githubApiUrl(settings);
-  return fetch(url + '?ref=' + encodeURIComponent(settings.branch), {headers:githubHeaders(token)})
-    .then(function(res){
-      if(res.status === 404) return null;
-      if(!res.ok) return responseError(res);
-      return res.json();
-    })
-    .then(function(current){
-      var payload = JSON.stringify({sections:SECTIONS, updated:new Date().toISOString()}, null, 2) + '\n';
-      var body = {message:'Update Prompt Playbook data', content:encodeBase64Utf8(payload), branch:settings.branch};
-      if(current && current.sha) body.sha = current.sha;
-      return fetch(url, {method:'PUT', headers:githubHeaders(token), body:JSON.stringify(body)});
-    })
-    .then(function(res){ if(!res.ok) return responseError(res); return res.json(); });
-}
-
-function openGithubSetup(){
-  var settings = getGithubSettings();
-  return new Promise(function(resolve){
-    var overlay = document.createElement('div'); overlay.className = 'modal-overlay';
-    var box = document.createElement('div'); box.className = 'modal';
-    box.innerHTML = '<h4>เชื่อมต่อ GitHub สำหรับบันทึกข้อมูล</h4>'
-      + '<p class="setup-note">สร้าง Fine-grained personal access token ที่เลือก owner และ repository ให้ตรงกับหน้านี้ และให้สิทธิ์ <b>Contents: Read and write</b> เท่านั้น Token จะเก็บใน session ของเบราว์เซอร์นี้ และจะไม่ถูกเผยแพร่ในหน้าเว็บ หากเป็น organization อาจต้องรอผู้ดูแลอนุมัติ token ก่อน</p>'
-      + '<label>GitHub owner / organization</label><input id="ghOwner" placeholder="เช่น your-org">'
-      + '<label>Repository</label><input id="ghRepo" placeholder="เช่น Aii-Prompt-Playbook">'
-      + '<label>Branch</label><input id="ghBranch" placeholder="main">'
-      + '<label>Personal access token</label><input id="ghToken" type="password" placeholder="github_pat_...">'
-      + '<div class="modal-actions"><button class="modal-btn cancel">ยกเลิก</button><button class="modal-btn ok">บันทึกการตั้งค่า</button></div>';
-    overlay.appendChild(box); document.body.appendChild(overlay);
-    var owner = box.querySelector('#ghOwner'), repo = box.querySelector('#ghRepo'), branch = box.querySelector('#ghBranch'), token = box.querySelector('#ghToken');
-    owner.value = settings.owner; repo.value = settings.repo; branch.value = settings.branch; token.value = getGithubToken();
-    function close(value){ document.body.removeChild(overlay); resolve(value); }
-    box.querySelector('.cancel').addEventListener('click', function(){ close(false); });
-    overlay.addEventListener('click', function(e){ if(e.target === overlay) close(false); });
-    box.querySelector('.ok').addEventListener('click', function(){
-      var next = {owner:owner.value.trim(), repo:repo.value.trim(), branch:branch.value.trim() || 'main', path:DEFAULT_DATA_PATH};
-      if(!next.owner || !next.repo || !token.value.trim()){ toast('กรอก GitHub owner, repository และ token ให้ครบ', true); return; }
-      saveGithubSettings(next, token.value.trim()); close(true);
-    });
-    setTimeout(function(){ owner.focus(); }, 50);
+  return fetch(PLAYBOOK_API, {
+    method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({sections:SECTIONS})
+  }).then(function(res){
+    if(!res.ok) return res.json().catch(function(){ return {}; }).then(function(body){ throw new Error(body.error || 'save failed'); });
+    return res.json();
   });
 }
 
@@ -373,7 +288,7 @@ function showSyncNote(fromShared){
       var d = new Date(LAST_UPDATED);
       txt.textContent = 'อัปเดตล่าสุด ' + d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}) + ' ' + d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
     }else{
-      txt.textContent = 'เวอร์ชันเผยแพร่จาก GitHub';
+      txt.textContent = 'เวอร์ชันเผยแพร่ล่าสุด';
     }
   }else{
     note.classList.add('off');
@@ -593,14 +508,14 @@ searchBox.addEventListener('input', function(){
 /* --- Admin gate + edit mode --- */
 document.getElementById('editToggle').addEventListener('click', function(){
   if(editMode){ exitEdit(); return; }
-  askModal({title:'ใส่รหัสผู้ดูแล', input:true, password:true, okText:'เข้าสู่โหมดแก้ไข'}).then(function(code){
-    if(code === null) return;
-    if(code !== ADMIN_PASSCODE){ toast('รหัสไม่ถูกต้อง', true); return; }
-    editMode = true;
-    body.classList.add('edit-mode');
-    searchBox.value = '';
-    render();
-  });
+  if(!canEdit){
+    toast('บัญชีนี้ไม่มีสิทธิ์แก้ไข โปรดเข้าสู่ระบบด้วยอีเมลแอดมินผ่าน Cloudflare Access', true);
+    return;
+  }
+  editMode = true;
+  body.classList.add('edit-mode');
+  searchBox.value = '';
+  render();
 });
 document.getElementById('exitEditBtn').addEventListener('click', exitEdit);
 function exitEdit(){
@@ -614,46 +529,22 @@ function exitEdit(){
   });
 }
 
-function saveErrorMessage(err){
-  var detail = (err && err.message) || '';
-  if(/Resource not accessible by personal access token|Bad credentials/i.test(detail)){
-    return 'Token ใช้กับ repo นี้ไม่ได้ — ตรวจ Resource owner, เลือก Aii-Prompt-Playbook ใน Repository access และตั้ง Contents เป็น Read and write';
-  }
-  if(/pending/i.test(detail)) return 'Token กำลังรอการอนุมัติจากผู้ดูแล organization';
-  return 'บันทึกไม่สำเร็จ: ' + (detail || 'ลองอีกครั้ง');
-}
-
-/* --- Save to the JSON file in the GitHub repository --- */
-document.getElementById('githubSetupBtn').addEventListener('click', function(){
-  openGithubSetup().then(function(saved){ if(saved) toast('ตั้งค่า GitHub แล้ว'); });
-});
+/* --- Save to the Cloudflare D1 API --- */
 document.getElementById('saveBtn').addEventListener('click', function(){
   var btn = this;
   commitEdits();
   btn.disabled = true;
-  var settings = getGithubSettings();
-  var ready = settings.owner && settings.repo && getGithubToken()
-    ? Promise.resolve(true)
-    : openGithubSetup();
-  ready
-    .then(function(connected){
-      if(!connected) throw new Error('setup-cancelled');
-      return savePublished();
-    })
-    .then(function(){
-      LAST_UPDATED = new Date().toISOString();
+  savePublished()
+    .then(function(result){
+      LAST_UPDATED = result.updated || new Date().toISOString();
       editMode = false;
       body.classList.remove('edit-mode');
       render();
       showSyncNote(true);
-      toast('บันทึกแล้ว — GitHub Pages จะเผยแพร่ข้อมูลใหม่ในไม่กี่นาที');
+      toast('บันทึกแล้ว — ทุกคนจะเห็นข้อมูลใหม่ทันที');
     })
     .catch(function(err){
-      if(err && err.message === 'setup-cancelled') return;
-      var msg = err && err.message === 'missing-github-setup'
-        ? 'กรุณาตั้งค่า GitHub ก่อนบันทึก'
-        : saveErrorMessage(err);
-      toast(msg, true);
+      toast('บันทึกไม่สำเร็จ: ' + ((err && err.message) || 'ลองอีกครั้ง'), true);
     })
     .then(function(){ btn.disabled = false; });
 });
