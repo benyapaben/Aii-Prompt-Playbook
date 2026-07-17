@@ -79,7 +79,7 @@
   .bar-btn.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}
   .bar-btn.ghost:hover{background:rgba(255,255,255,.12)}
   body.edit-mode main{padding-bottom:140px}
-  .toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;font-size:14px;font-weight:600;padding:10px 22px;border-radius:999px;z-index:200;opacity:0;pointer-events:none;transition:opacity .25s}
+  .toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);max-width:min(92vw,760px);background:var(--ok);color:#fff;font-size:14px;font-weight:600;padding:10px 22px;border-radius:999px;z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;text-align:center}
   .toast.err{background:var(--red-dark)}
   .toast.show{opacity:1}
   /* ---------- Modal (sandbox-safe replacement for prompt/confirm) ---------- */
@@ -342,7 +342,7 @@ function openGithubSetup(){
     var overlay = document.createElement('div'); overlay.className = 'modal-overlay';
     var box = document.createElement('div'); box.className = 'modal';
     box.innerHTML = '<h4>เชื่อมต่อ GitHub สำหรับบันทึกข้อมูล</h4>'
-      + '<p class="setup-note">สร้าง Fine-grained personal access token ที่มีสิทธิ์ <b>Contents: Read and write</b> สำหรับ repository นี้เท่านั้น Token จะเก็บใน session ของเบราว์เซอร์นี้ และจะไม่ถูกเผยแพร่ในหน้าเว็บ</p>'
+      + '<p class="setup-note">สร้าง Fine-grained personal access token ที่เลือก owner และ repository ให้ตรงกับหน้านี้ และให้สิทธิ์ <b>Contents: Read and write</b> เท่านั้น Token จะเก็บใน session ของเบราว์เซอร์นี้ และจะไม่ถูกเผยแพร่ในหน้าเว็บ หากเป็น organization อาจต้องรอผู้ดูแลอนุมัติ token ก่อน</p>'
       + '<label>GitHub owner / organization</label><input id="ghOwner" placeholder="เช่น your-org">'
       + '<label>Repository</label><input id="ghRepo" placeholder="เช่น Aii-Prompt-Playbook">'
       + '<label>Branch</label><input id="ghBranch" placeholder="main">'
@@ -614,6 +614,15 @@ function exitEdit(){
   });
 }
 
+function saveErrorMessage(err){
+  var detail = (err && err.message) || '';
+  if(/Resource not accessible by personal access token|Bad credentials/i.test(detail)){
+    return 'Token ใช้กับ repo นี้ไม่ได้ — ตรวจ Resource owner, เลือก Aii-Prompt-Playbook ใน Repository access และตั้ง Contents เป็น Read and write';
+  }
+  if(/pending/i.test(detail)) return 'Token กำลังรอการอนุมัติจากผู้ดูแล organization';
+  return 'บันทึกไม่สำเร็จ: ' + (detail || 'ลองอีกครั้ง');
+}
+
 /* --- Save to the JSON file in the GitHub repository --- */
 document.getElementById('githubSetupBtn').addEventListener('click', function(){
   openGithubSetup().then(function(saved){ if(saved) toast('ตั้งค่า GitHub แล้ว'); });
@@ -643,7 +652,7 @@ document.getElementById('saveBtn').addEventListener('click', function(){
       if(err && err.message === 'setup-cancelled') return;
       var msg = err && err.message === 'missing-github-setup'
         ? 'กรุณาตั้งค่า GitHub ก่อนบันทึก'
-        : 'บันทึกไม่สำเร็จ: ' + ((err && err.message) || 'ลองอีกครั้ง');
+        : saveErrorMessage(err);
       toast(msg, true);
     })
     .then(function(){ btn.disabled = false; });
