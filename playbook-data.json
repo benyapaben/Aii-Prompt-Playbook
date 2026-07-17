@@ -1,0 +1,19 @@
+{
+  "sections": [
+    {"id":"ga","en":"GA","th":"Gross Add — ยอดรับสมาชิกใหม่","priority":true,"prompts":["แสดง TOL Gross Add ปี 2026 แยกตามพื้นที่","แสดง TOL Gross Add แยกตาม Connected Geo และ Channel แยกตามพื้นที่","แสดง GA ของ Prepaid ย้อนหลัง 3 เดือน","แสดง PBH Ranking by GA แยกตาม ปีล่าสุด"]},
+    {"id":"ga-inflow","en":"GA & Inflow M1","th":"ดู GA คู่กับ Inflow M1","priority":true,"prompts":["แสดง GA และ Inflow M1 ของ Prepaid ปี 2026 แยกตามพื้นที่","แสดง GA และ Inflow M1 ของ Postpaid ปี 2026 แยกตามพื้นที่","แสดง GA และ Inflow M1 ของ TOL ปี 2026 แยกตามพื้นที่"]},
+    {"id":"inflow","en":"Inflow M1","th":"คุณภาพสมาชิกใหม่เดือนแรก","priority":true,"prompts":["แสดง Inflow M1 ของ Prepaid ล่าสุด แยกตามพื้นที่","แสดง Inflow M1 ของ Postpaid ล่าสุด แยกตามพื้นที่","แสดง Inflow M1 ของ TOL ล่าสุด แยกตามพื้นที่"]},
+    {"id":"netadd","en":"Net Add","th":"ยอดสมาชิกสุทธิ","priority":true,"prompts":["แสดง Net Add แยกตาม ปี 2026 แยกPBH ด้วยได้ไหม","แสดง Net Add ล่าสุด","แสดง TOL Net Add Trend เดือนนี้ แยกตาม PBH"]},
+    {"id":"churn","en":"Churn","th":"การสูญเสียสมาชิก","priority":true,"prompts":["แสดง TOL Churn Subs ปี 2026 ตาม Voluntary Churn และ Involuntary Churn แยกตามพื้นที่/PBH","แสดง Postpaid Churn Subs และ %MoM ของ True และ Dtac ปี 2026 แยกตามพื้นที่","แสดง TOL Churn Rate ย้อนหลัง 3 เดือน แยก"]},
+    {"id":"kpi","en":"KPI Performance","th":"ผลงานเทียบเป้าหมาย","priority":false,"prompts":["แสดง KPI Performance และ YTD Achievement ย้อนหลัง 3 เดือน แยกตามพื้นที่/PBH","แสดง Prepaid Performance แยกตาม ปี ล่าสุด เเละ %Achievement","แสดง TOL Performance Actual แยกตาม ปี ล่าสุด"]},
+    {"id":"mobile-mks","en":"Mobile Market Share","th":"ส่วนแบ่งตลาดมือถือ","priority":false,"prompts":["แสดง Mobile Subs Share ปี 2026 แยกตามพื้นที่ เปรียบเทียบกับคู่แข่ง","แสดง Mobile Market Share ของ True, Dtac และ AIS"]},
+    {"id":"tol-mks","en":"TOL Market Share","th":"ส่วนแบ่งตลาดออนไลน์บ้าน","priority":false,"prompts":["แสดง TOL Market Share แยกตาม Subscriber และ %MKS แยกตามพื้นที่"]},
+    {"id":"arpu","en":"ARPU","th":"รายได้เฉลี่ยต่อเลขหมาย","priority":false,"prompts":["ขอ TOL ARPU ของ 3 เดือนที่ผ่านมา","แสดง Prepaid ARPU ย้อนหลัง 3 เดือน"]},
+    {"id":"revenue","en":"Service Revenue","th":"รายได้จากบริการ","priority":false,"prompts":["แสดง Service Revenue by Product และ YTD ปี 2026 แยกตามจังหวัด/ภูมิภาค/ช่องทาง","แสดง Service Revenue ล่าสุด ของ Geo Channel"]},
+    {"id":"caller","en":"Active Caller","th":"ผู้ใช้งานที่มีการโทรจริง","priority":false,"prompts":["แสดง Active Caller ล่าสุด แยกตามพื้นที่","แสดง Active Caller และ YoY แยกตาม ปี 2026"]},
+    {"id":"ap1d","en":"AP1D","th":"Active Prepaid 1 Day","priority":false,"prompts":["แสดง AP1D ของ Prepaid ปี 2026 แยกตามพื้นที่"]},
+    {"id":"network","en":"Network Quality","th":"คุณภาพเครือข่าย","priority":false,"prompts":["แสดงข้อมูล Blackcell 4G และ Blackcell 5G ปี 2026 แยกตามพื้นที่ เปรียบเทียบกับเดือนก่อนด้วย"]},
+    {"id":"salein","en":"Sale-In","th":"ยอดขายเข้าช่องทาง","priority":false,"prompts":["แสดง TOL Sale-In และ MTD ล่าสุด"]}
+  ],
+  "updated": null
+}
